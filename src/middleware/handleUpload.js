@@ -21,11 +21,11 @@ async function handleUpload(req, res, next) {
   });
   bboy.on('error', err => {
     req.unpipe(bboy);
-    next(err);
+    return next(err);
   });
   bboy.on('finish', () => {
     req.unpipe(bboy);
-    next();
+    return next();
   });
   req.pipe(bboy);
 }

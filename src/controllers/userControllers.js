@@ -13,7 +13,7 @@ async function createUser(req, res) {
     expiresIn: '15m'
   });
 
-  res.status(201).json({ token });
+  return res.status(201).json({ token });
 }
 
 module.exports = {

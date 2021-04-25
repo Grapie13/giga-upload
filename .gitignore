@@ -2,3 +2,4 @@ node_modules/
 logs/
 uploads/
 config/
+.nyc_output/
