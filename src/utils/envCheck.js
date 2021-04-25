@@ -1,10 +1,11 @@
 'use strict';
 
-const { asyncLogger } = require('./asyncLogger');
+const { logger } = require('../logger');
 
 const ENVIRONMENTAL_VARIABLES = [
   'APP_PORT',
-  'JWT_SECRET'
+  'JWT_SECRET',
+  'MONGO_URI'
 ];
 
 async function envCheck() {
@@ -17,8 +18,8 @@ async function envCheck() {
   }
 
   if (unsetVariables.length !== 0) {
-    await asyncLogger('error', { message: 'Environmental variable check failed', unsetVariables });
-    process.exit(1);
+    logger.log('error', JSON.stringify({ message: 'Environmental variable check failed', unsetVariables }));
+    throw new Error('Environmental variable check failed');
   }
 }
 

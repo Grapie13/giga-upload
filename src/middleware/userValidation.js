@@ -9,7 +9,7 @@ async function userValidation(req, res, next) {
     });
     return next();
   } catch (err) {
-    return next(err);
+    return res.status(401).json({ message: err.message });
   }
 }
 
