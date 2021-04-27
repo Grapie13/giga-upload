@@ -8,6 +8,7 @@ const userSchema = Joi.object({
     .required()
     .min(3)
     .max(20),
+  role: Joi.string().forbidden(),
   password: Joi
     .string()
     .required()
