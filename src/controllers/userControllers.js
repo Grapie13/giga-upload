@@ -21,7 +21,13 @@ async function createUser(req, res) {
   return res.status(201).json({ token });
 }
 
+async function deleteUser(req, res) {
+  await User.deleteOne({ username: req.params.username });
+  return res.status(200).end();
+}
+
 module.exports = {
   getAllUsers,
-  createUser
+  createUser,
+  deleteUser
 };
