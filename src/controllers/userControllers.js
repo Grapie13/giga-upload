@@ -21,6 +21,14 @@ async function createUser(req, res) {
   return res.status(201).json({ token });
 }
 
+async function updateUser(req, res) {
+  const user = await User.findOne({ username: req.params.username });
+  user.password = req.body.password ?? user.password;
+  user.role = req.body.role ?? user.role;
+  await user.save();
+  return res.status(200).json({ user });
+}
+
 async function deleteUser(req, res) {
   await User.deleteOne({ username: req.params.username });
   return res.status(200).end();
@@ -29,5 +37,6 @@ async function deleteUser(req, res) {
 module.exports = {
   getAllUsers,
   createUser,
+  updateUser,
   deleteUser
 };
