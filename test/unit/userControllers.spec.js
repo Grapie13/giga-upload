@@ -5,13 +5,15 @@ const {
   match,
   stub,
   restore,
-  resetHistory
+  resetHistory,
 } = require('sinon');
 const sinonChai = require('sinon-chai');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { User } = require('../../src/models/User');
-const { createUser, getAllUsers, deleteUser } = require('../../src/controllers/userControllers');
+const {
+  getAllUsers, createUser, updateUser, deleteUser
+} = require('../../src/controllers/userControllers');
 const { mockRequest } = require('../utils/mockRequest');
 const { mockResponse } = require('../utils/mockResponse');
 
@@ -32,7 +34,15 @@ describe('User Controllers', () => {
       if (!username || !password) {
         throw new Error('Username or password missing');
       }
-      const savedUser = { username, password, id: new mongoose.Types.ObjectId() };
+      const savedUser = {
+        username,
+        password,
+        id: new mongoose.Types.ObjectId(),
+        save: stub().callsFake(() => new Promise(resolve => {
+          users = users.map(dbEntry => (dbEntry.username === savedUser.username ? savedUser : dbEntry));
+          return resolve(true);
+        }))
+      };
       users.push(savedUser);
       return savedUser;
     });
@@ -45,6 +55,13 @@ describe('User Controllers', () => {
       return true;
     });
     stub(User, 'find').resolves(users);
+    stub(User, 'findOne').callsFake(userData => {
+      const { username } = userData;
+      if (!username) {
+        throw new Error('Username missing');
+      }
+      return users.find(dbEntry => dbEntry.username === username);
+    });
     stub(jwt, 'sign').returns(token);
   });
 
@@ -93,7 +110,22 @@ describe('User Controllers', () => {
   });
 
   describe('Update user', () => {
-    it("should update a user's password", async () => {});
+    it("should update a user's password", async () => {
+      let req = mockRequest({ body: { username: user.username, password: user.password } });
+      let res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      const newPassword = 'newPassword';
+      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { role: 'user' } });
+      res = mockResponse();
+      await updateUser(req, res);
+      const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
+      expect(updatedUser.save).to.have.been.called;
+      expect(updatedUser.password).to.eq(newPassword);
+      expect(res.status).to.have.been.calledWith(200);
+      expect(res.json).to.have.been.called;
+    });
   });
 
   describe('Delete user', () => {

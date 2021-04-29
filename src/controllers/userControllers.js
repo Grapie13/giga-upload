@@ -23,8 +23,13 @@ async function createUser(req, res) {
 
 async function updateUser(req, res) {
   const user = await User.findOne({ username: req.params.username });
+  if (req.user.username !== user.username && req.user.role !== 'administrator') {
+    return res.status(403).json({ message: 'You are not authorized to access this route' });
+  }
   user.password = req.body.password ?? user.password;
-  user.role = req.body.role ?? user.role;
+  if (req.user.role === 'administrator') {
+    user.role = req.body.role ?? user.role;
+  }
   await user.save();
   return res.status(200).json({ user });
 }
