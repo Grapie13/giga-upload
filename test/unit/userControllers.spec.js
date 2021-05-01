@@ -23,29 +23,28 @@ const { expect } = chai;
 describe('User Controllers', () => {
   const user = {
     username: 'Tester',
+    role: 'user',
     password: 'password'
   };
   let users = [];
   const token = 'signedjwt';
 
   before(() => {
-    stub(User, 'create').callsFake(userData => {
+    stub(User, 'create').callsFake(userData => new Promise((resolve, reject) => {
       const { username, password } = userData;
       if (!username || !password) {
-        throw new Error('Username or password missing');
+        return reject(new Error('Username or password missing'));
       }
       const savedUser = {
         username,
         password,
+        role: 'user',
         id: new mongoose.Types.ObjectId(),
-        save: stub().callsFake(() => new Promise(resolve => {
-          users = users.map(dbEntry => (dbEntry.username === savedUser.username ? savedUser : dbEntry));
-          return resolve(true);
-        }))
+        save: stub().resolves(true)
       };
       users.push(savedUser);
-      return savedUser;
-    });
+      return resolve(savedUser);
+    }));
     stub(User, 'deleteOne').callsFake(userData => {
       const { username } = userData;
       if (!username) {
@@ -66,6 +65,9 @@ describe('User Controllers', () => {
   });
 
   beforeEach(() => {
+    while (users.length !== 0) {
+      users.pop();
+    }
     resetHistory();
   });
 
@@ -110,6 +112,27 @@ describe('User Controllers', () => {
   });
 
   describe('Update user', () => {
+    it('should return a 403 status if the updating user is not an administrator nor the owner of the account', async () => {
+      let req = mockRequest({ body: { username: user.username, password: user.password } });
+      let res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      const newPassword = 'newPassword';
+      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { username: 'MaliciousUser', role: 'user' } });
+      res = mockResponse();
+      await updateUser(req, res);
+      expect(res.status).to.have.been.calledWith(403);
+      expect(res.json).to.have.been.calledWith(match({ message: 'You are not authorized to access this route' }));
+
+      const adminRole = 'administrator';
+      req = mockRequest({ params: { username: user.username }, body: { role: adminRole }, user: { username: 'MaliciousUser', role: 'user' } });
+      res = mockResponse();
+      await updateUser(req, res);
+      expect(res.status).to.have.been.calledWith(403);
+      expect(res.json).to.have.been.calledWith(match({ message: 'You are not authorized to access this route' }));
+    });
+
     it("should update a user's password", async () => {
       let req = mockRequest({ body: { username: user.username, password: user.password } });
       let res = mockResponse();
@@ -117,14 +140,27 @@ describe('User Controllers', () => {
       expect(res.status).to.have.been.calledWith(201);
 
       const newPassword = 'newPassword';
-      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { role: 'user' } });
+      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { username: user.username, role: 'user' } });
       res = mockResponse();
       await updateUser(req, res);
       const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
-      expect(updatedUser.save).to.have.been.called;
-      expect(updatedUser.password).to.eq(newPassword);
       expect(res.status).to.have.been.calledWith(200);
-      expect(res.json).to.have.been.called;
+      expect(res.json).to.have.been.calledWith(match({ user: { ...updatedUser, password: newPassword } }));
+    });
+
+    it("should update a user's role if the updating user is an administrator", async () => {
+      let req = mockRequest({ body: { username: user.username, password: user.password } });
+      let res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      const adminRole = 'administrator';
+      req = mockRequest({ params: { username: user.username }, body: { role: adminRole }, user: { role: adminRole } });
+      res = mockResponse();
+      await updateUser(req, res);
+      const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
+      expect(res.status).to.have.been.calledWith(200);
+      expect(res.json).to.have.been.calledWith(match({ user: { ...updatedUser, role: adminRole } }));
     });
   });
 
