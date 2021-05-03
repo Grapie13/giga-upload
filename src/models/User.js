@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
     transform: (doc, ret) => {
       ret.id = ret._id; // eslint-disable-line
       delete ret._id; // eslint-disable-line
+      delete ret.__v; // eslint-disable-line
     }
   }
 });

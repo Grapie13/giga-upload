@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
 
 async function getAllUsers(req, res) {
-  const users = await User.find();
+  const users = await User.find().select('-password');
   return res.status(200).json({ users });
 }
 
@@ -17,7 +17,6 @@ async function createUser(req, res) {
   const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
     expiresIn: '15m'
   });
-
   return res.status(201).json({ token });
 }
 
@@ -35,6 +34,9 @@ async function updateUser(req, res) {
 }
 
 async function deleteUser(req, res) {
+  if (req.user.username !== req.params.username && req.user.role !== 'administrator') {
+    return res.status(403).json({ message: 'You are not authorized to access this route' });
+  }
   await User.deleteOne({ username: req.params.username });
   return res.status(200).end();
 }
