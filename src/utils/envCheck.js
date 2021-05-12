@@ -5,7 +5,8 @@ const { logger } = require('../logger');
 const ENVIRONMENTAL_VARIABLES = [
   'APP_PORT',
   'JWT_SECRET',
-  'MONGO_URI'
+  'MONGO_URI',
+  'UPLOAD_DIR'
 ];
 
 async function envCheck() {

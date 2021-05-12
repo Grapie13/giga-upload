@@ -1,32 +1,55 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
+const { createWriteStream, stat, promises: fs } = require('fs');
 const Busboy = require('busboy');
+const { pipeline } = require('stream');
 const { checkIfDirExists } = require('../utils/checkIfDirExists');
 
 async function handleUpload(req, res, next) {
-  const uploadPath = path.join(__dirname, '../../uploads');
+  const uploadPath = path.join(__dirname, `../../${process.env.UPLOAD_DIR}`);
   await checkIfDirExists(uploadPath);
 
-  req.body = Object.create(null);
-
   const bboy = new Busboy({ headers: req.headers });
-  bboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
-    const filePath = path.join(__dirname, `../../uploads/${filename}`);
-    req.file = {
-      filePath, filename, encoding, mimetype
-    };
-    fileStream.pipe(fs.createWriteStream(filePath));
-  });
-  bboy.on('error', err => {
+
+  function abort(err) {
     req.unpipe(bboy);
-    return next(err);
-  });
-  bboy.on('finish', () => {
+    res.status(413).json({ message: err.message });
+  }
+
+  function finish() {
     req.unpipe(bboy);
-    return next();
+    next();
+  }
+
+  function deleteFileAndAbort(err, failedUploadPath) {
+    stat(failedUploadPath, async statErr => {
+      if (!statErr) {
+        await fs.rm(failedUploadPath);
+      }
+    });
+    abort(err);
+  }
+
+  bboy.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
+    const filePath = path.join(uploadPath, filename);
+    fileStream.on('end', () => {
+      req.file = {
+        filename,
+        filePath,
+        encoding,
+        mimetype
+      };
+    });
+    pipeline(fileStream, createWriteStream(filePath), pipelineErr => {
+      if (pipelineErr) {
+        deleteFileAndAbort(pipelineErr, filePath);
+      }
+    });
   });
+  req.on('aborted', abort);
+  bboy.on('error', abort);
+  bboy.on('finish', finish);
   req.pipe(bboy);
 }
 

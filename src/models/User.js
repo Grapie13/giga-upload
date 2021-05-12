@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose');
 const { hashPassword, comparePasswords } = require('../utils/passwordUtils');
+const { ROLES } = require('../utils/constants/roles');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -11,7 +12,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'user'
+    default: ROLES.User
   },
   password: {
     type: String,
