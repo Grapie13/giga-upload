@@ -7,19 +7,19 @@ const { pipeline } = require('stream');
 const { checkIfDirExists } = require('../utils/checkIfDirExists');
 
 async function handleUpload(req, res, next) {
-  const uploadPath = path.join(__dirname, `../../${process.env.UPLOAD_DIR}`);
+  const uploadPath = path.join(__dirname, `../../${process.env.UPLOAD_DIR}/${req.user.username}`);
   await checkIfDirExists(uploadPath);
 
   const bboy = new Busboy({ headers: req.headers });
 
   function abort(err) {
     req.unpipe(bboy);
-    res.status(413).json({ message: err.message });
+    return res.status(413).json({ message: err });
   }
 
   function finish() {
     req.unpipe(bboy);
-    next();
+    return next();
   }
 
   function deleteFileAndAbort(err, failedUploadPath) {

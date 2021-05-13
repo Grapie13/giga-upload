@@ -12,8 +12,9 @@ const fileSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  ownerUsername: {
-    type: String,
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   encoding: {

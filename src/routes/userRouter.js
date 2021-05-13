@@ -6,12 +6,11 @@ const {
 } = require('../controllers/userControllers');
 const { userValidation } = require('../middleware/userValidation');
 const { authorizationCheck } = require('../middleware/authorizationCheck');
-const { userExistsCheck } = require('../middleware/userExistsCheck');
 
 const userRouter = express.Router();
 
-userRouter.route('/v1/user').get(getAllUsers).post(userValidation, createUser);
-userRouter.route('/v1/user/:username').patch([userExistsCheck, authorizationCheck], updateUser).delete([userExistsCheck, authorizationCheck], deleteUser);
+userRouter.route('/v1/users').get(getAllUsers).post([authorizationCheck, userValidation], createUser);
+userRouter.route('/v1/users/:username').patch(authorizationCheck, updateUser).delete(authorizationCheck, deleteUser);
 
 module.exports = {
   userRouter

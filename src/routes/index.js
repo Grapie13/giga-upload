@@ -3,6 +3,7 @@
 const express = require('express');
 const { userRouter } = require('./userRouter');
 const { fileRouter } = require('./fileRouter');
+const { authRouter } = require('./authRouter');
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.route('/v1/health').get((req, res) => {
 });
 router.use(userRouter);
 router.use(fileRouter);
+router.use(authRouter);
 
 module.exports = {
   router
