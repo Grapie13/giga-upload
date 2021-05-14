@@ -18,10 +18,12 @@ const fileSchema = new mongoose.Schema({
     required: true
   },
   encoding: {
-    type: String
+    type: String,
+    required: true
   },
   mimetype: {
-    type: String
+    type: String,
+    required: true
   }
 }, {
   toJSON: {

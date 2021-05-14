@@ -11,6 +11,7 @@ async function handleUpload(req, res, next) {
   await checkIfDirExists(uploadPath);
 
   const bboy = new Busboy({ headers: req.headers });
+  req.file = Object.create(null);
 
   function abort(err) {
     req.unpipe(bboy);
@@ -40,12 +41,10 @@ async function handleUpload(req, res, next) {
       }
     });
     fileStream.on('end', () => {
-      req.file = {
-        filename,
-        filePath,
-        encoding,
-        mimetype
-      };
+      req.file.filename = filename;
+      req.file.filePath = filePath;
+      req.file.encoding = encoding;
+      req.file.mimetype = mimetype;
     });
     pipeline(fileStream, createWriteStream(filePath, { encoding: 'utf-8' }), pipelineErr => {
       if (pipelineErr) {

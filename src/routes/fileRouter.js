@@ -6,11 +6,12 @@ const {
 } = require('../controllers/fileControllers');
 const { handleUpload } = require('../middleware/handleUpload');
 const { authorizationCheck } = require('../middleware/authorizationCheck');
+const { adminRoleCheck } = require('../middleware/adminRoleCheck');
 
 const fileRouter = express.Router();
 
-fileRouter.route('/v1/files').get(getFiles).post([authorizationCheck, handleUpload], createFile);
-fileRouter.route('/v1/files/:fileId').get(getFile).delete(deleteFile);
+fileRouter.route('/v1/files').get([authorizationCheck, adminRoleCheck], getFiles).post([authorizationCheck, handleUpload], createFile);
+fileRouter.route('/v1/files/:fileId').get([authorizationCheck, adminRoleCheck], getFile).delete(authorizationCheck, deleteFile);
 
 module.exports = {
   fileRouter

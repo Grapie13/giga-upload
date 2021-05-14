@@ -6,7 +6,7 @@ const { User } = require('../models/User');
 async function authorizationCheck(req, res, next) {
   const bearer = req.get('Authorization');
   if (!bearer) {
-    return res.status(403).json({ message: 'No token' });
+    return res.status(403).json({ message: 'You are not authorized to access this route' });
   }
   const splitToken = bearer.split(' ')[1];
   try {
@@ -14,7 +14,7 @@ async function authorizationCheck(req, res, next) {
     req.user = await User.findOne({ username: payload.username });
     return next();
   } catch (err) {
-    return res.status(403).json({ message: 'Invalid token' });
+    return res.status(403).json({ message: 'You are not authorized to access this route' });
   }
 }
 
