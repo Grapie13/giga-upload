@@ -9,7 +9,7 @@ async function getFiles(req, res) {
 }
 
 async function getFile(req, res) {
-  const file = await File.find({ id: req.params.id });
+  const file = await File.findOne({ _id: req.params.fileId }).populate('owner', '-password');
   if (!file) {
     return res.status(404).json({ message: 'File not found' });
   }
@@ -24,17 +24,17 @@ async function createFile(req, res) {
     encoding: req.file.encoding,
     mimetype: req.file.mimetype
   });
-  file = await file.populate('User').execPopulate();
+  file = await file.populate('owner', '-password').execPopulate();
   return res.status(201).json({ file });
 }
 
 async function deleteFile(req, res) {
-  const file = await File.findOne({ id: req.params.fileId });
+  const file = await File.findOne({ _id: req.params.fileId });
   if (!file) {
     return res.status(404).json({ message: 'File not found' });
   }
   await fs.rm(file.path);
-  await File.deleteOne({ id: req.params.fileId });
+  await File.deleteOne({ _id: req.params.fileId });
   return res.status(200).json({});
 }
 

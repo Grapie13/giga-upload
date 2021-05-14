@@ -14,7 +14,7 @@ async function handleUpload(req, res, next) {
 
   function abort(err) {
     req.unpipe(bboy);
-    return res.status(413).json({ message: err });
+    return res.status(400).json({ message: err });
   }
 
   function finish() {
@@ -33,6 +33,12 @@ async function handleUpload(req, res, next) {
 
   bboy.on('file', (fieldname, fileStream, filename, encoding, mimetype) => {
     const filePath = path.join(uploadPath, filename);
+    stat(filePath, async err => {
+      if (!err) {
+        fileStream.resume();
+        abort('File already exists on the server');
+      }
+    });
     fileStream.on('end', () => {
       req.file = {
         filename,
@@ -41,7 +47,7 @@ async function handleUpload(req, res, next) {
         mimetype
       };
     });
-    pipeline(fileStream, createWriteStream(filePath), pipelineErr => {
+    pipeline(fileStream, createWriteStream(filePath, { encoding: 'utf-8' }), pipelineErr => {
       if (pipelineErr) {
         deleteFileAndAbort(pipelineErr, filePath);
       }

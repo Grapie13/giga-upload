@@ -23,6 +23,14 @@ const fileSchema = new mongoose.Schema({
   mimetype: {
     type: String
   }
+}, {
+  toJSON: {
+    transform(doc, ret) {
+      ret.id = ret._id; // eslint-disable-line
+      delete ret._id; // eslint-disable-line
+      delete ret.__v; // eslint-disable-line
+    }
+  }
 });
 
 const File = mongoose.model('File', fileSchema);
