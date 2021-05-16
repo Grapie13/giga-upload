@@ -4,6 +4,7 @@ const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { router: routes } = require('./routes');
+const { errorHandler } = require('./utils/errorHandler');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(rateLimit({
 }));
 
 app.use(routes);
+app.use(errorHandler);
 
 module.exports = {
   app
