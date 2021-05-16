@@ -7,11 +7,16 @@ const {
 const { handleUpload } = require('../middleware/handleUpload');
 const { authorizationCheck } = require('../middleware/authorizationCheck');
 const { adminRoleCheck } = require('../middleware/adminRoleCheck');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 const fileRouter = express.Router();
 
-fileRouter.route('/v1/files').get([authorizationCheck, adminRoleCheck], getFiles).post([authorizationCheck, handleUpload], createFile);
-fileRouter.route('/v1/files/:fileId').get([authorizationCheck, adminRoleCheck], getFile).delete(authorizationCheck, deleteFile);
+fileRouter.route('/v1/files')
+  .get([authorizationCheck, adminRoleCheck], asyncHandler(getFiles))
+  .post([authorizationCheck, handleUpload], asyncHandler(createFile));
+fileRouter.route('/v1/files/:fileId')
+  .get([authorizationCheck, adminRoleCheck], asyncHandler(getFile))
+  .delete(authorizationCheck, asyncHandler(deleteFile));
 
 module.exports = {
   fileRouter
