@@ -56,7 +56,7 @@ async function deleteUser(req, res) {
     throw new ForbiddenError();
   }
   await User.deleteOne({ username: req.params.username });
-  return res.status(200).end();
+  return res.status(200).json({ message: 'User deleted successfully' });
 }
 
 module.exports = {
