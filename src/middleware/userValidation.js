@@ -1,6 +1,7 @@
 'use strict';
 
 const { userSchema } = require('../validation/userSchema');
+const { ValidationError } = require('../errors/ValidationError');
 
 async function userValidation(req, res, next) {
   try {
@@ -9,7 +10,7 @@ async function userValidation(req, res, next) {
     });
     return next();
   } catch (err) {
-    return res.status(401).json({ message: err.message });
+    return next(new ValidationError(err.details));
   }
 }
 

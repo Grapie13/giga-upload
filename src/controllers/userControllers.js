@@ -2,39 +2,42 @@
 
 const { User } = require('../models/User');
 const { ROLES } = require('../utils/constants/roles');
+const { NotFoundError } = require('../errors/NotFoundError');
+const { BadRequestError } = require('../errors/BadRequestError');
+const { ForbiddenError } = require('../errors/ForbiddenError');
 
 async function getAllUsers(req, res) {
-  const users = await User.find().select('-password');
+  const users = await User.find().select('-password').exec();
   return res.status(200).json({ users });
 }
 
 async function getUser(req, res) {
-  const user = await User.findOne({ username: req.params.username }).select('-password');
+  const user = await User.findOne({ username: req.params.username }).select('-password').exec();
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    throw new NotFoundError('User not found');
   }
   if (req.user.username !== user.username && req.user.role !== ROLES.Administrator) {
-    return res.status(403).json({ message: 'You are not authorized to access this route' });
+    throw new ForbiddenError();
   }
   return res.status(200).json({ user });
 }
 
 async function createUser(req, res) {
-  let user = await User.findOne({ username: req.body.username });
+  let user = await User.findOne({ username: req.body.username }).exec();
   if (user) {
-    return res.status(400).json({ message: 'User already exists' });
+    throw new BadRequestError('User already exists');
   }
-  user = await User.create(req.body);
+  user = await User.create(req.body).exec();
   return res.status(201).json({ user });
 }
 
 async function updateUser(req, res) {
-  const user = await User.findOne({ username: req.params.username });
+  const user = await User.findOne({ username: req.params.username }).exec();
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    throw new NotFoundError('User not found');
   }
   if (req.user.username !== user.username && req.user.role !== ROLES.Administrator) {
-    return res.status(403).json({ message: 'You are not authorized to access this route' });
+    throw new ForbiddenError();
   }
   user.password = req.body.password ?? user.password;
   if (req.user.role === ROLES.Administrator) {
@@ -45,12 +48,12 @@ async function updateUser(req, res) {
 }
 
 async function deleteUser(req, res) {
-  const user = await User.findOne({ username: req.params.username });
+  const user = await User.findOne({ username: req.params.username }).exec();
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    throw new NotFoundError('User not found');
   }
   if (req.user.username !== req.params.username && req.user.role !== ROLES.Administrator) {
-    return res.status(403).json({ message: 'You are not authorized to access this route' });
+    throw new ForbiddenError();
   }
   await User.deleteOne({ username: req.params.username });
   return res.status(200).end();

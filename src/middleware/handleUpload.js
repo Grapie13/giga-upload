@@ -5,6 +5,7 @@ const { createWriteStream, stat, promises: { rm } } = require('fs');
 const Busboy = require('busboy');
 const { pipeline } = require('stream');
 const { checkIfDirExists } = require('../utils/checkIfDirExists');
+const { BadRequestError } = require('../errors/BadRequestError');
 
 async function handleUpload(req, res, next) {
   const uploadPath = path.join(__dirname, `../../${process.env.UPLOAD_DIR}/${req.user.username}`);
@@ -38,7 +39,7 @@ async function handleUpload(req, res, next) {
     stat(filePath, statErr => {
       if (!statErr) {
         fileStream.resume();
-        return res.status(400).json({ message: 'File already exists' });
+        return next(new BadRequestError('File already exists on the server'));
       }
       return pipeline(fileStream, createWriteStream(filePath, { encoding: 'utf-8' }), pipelineErr => {
         if (pipelineErr) {

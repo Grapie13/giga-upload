@@ -1,10 +1,11 @@
 'use strict';
 
 const { ROLES } = require('../utils/constants/roles');
+const { ForbiddenError } = require('../errors/ForbiddenError');
 
 function adminRoleCheck(req, res, next) {
   if (req.user.role !== ROLES.Administrator) {
-    return res.status(403).json({ message: 'You are not authorized to access this route' });
+    return next(new ForbiddenError());
   }
   return next();
 }

@@ -2,16 +2,17 @@
 
 const { promises: fs } = require('fs');
 const { File } = require('../models/File');
+const { NotFoundError } = require('../errors/NotFoundError');
 
 async function getFiles(req, res) {
-  const files = await File.find();
+  const files = await File.find().populate('owner', '-password').exec();
   return res.status(200).json({ files });
 }
 
 async function getFile(req, res) {
-  const file = await File.findOne({ _id: req.params.fileId }).populate('owner', '-password');
+  const file = await File.findOne({ _id: req.params.fileId }).populate('owner', '-password').exec();
   if (!file) {
-    return res.status(404).json({ message: 'File not found' });
+    throw new NotFoundError('File not found');
   }
   return res.status(200).json({ file });
 }
@@ -29,13 +30,13 @@ async function createFile(req, res) {
 }
 
 async function deleteFile(req, res) {
-  const file = await File.findOne({ _id: req.params.fileId });
+  const file = await File.findOne({ _id: req.params.fileId }).exec();
   if (!file) {
-    return res.status(404).json({ message: 'File not found' });
+    throw new NotFoundError('File not found');
   }
   await fs.rm(file.path);
-  await File.deleteOne({ _id: req.params.fileId });
-  return res.status(200).json({});
+  await File.deleteOne({ _id: req.params.fileId }).exec();
+  return res.status(200).end();
 }
 
 module.exports = {
