@@ -9,7 +9,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line
     return res.status(400).json({ error: 'Invalid ID' });
   }
   if (err instanceof CustomError) {
-    return res.status(err.errorCode).json(err.formatErrors());
+    return res.status(err.statusCode).json(err.formatErrors());
   }
   logger.log('error', JSON.stringify(err));
   return res.status(500).json({ error: 'Internal server error' });

@@ -6,11 +6,11 @@ class CustomError extends Error {
     if (this.constructor === CustomError) {
       throw new Error("Class 'CustomError' is abstract and cannot be instantiated");
     }
-    this._errorCode = undefined;
+    this._statusCode = undefined;
   }
 
-  get errorCode() {
-    return this._errorCode;
+  get statusCode() {
+    return this._statusCode;
   }
 
   formatErrors() {

@@ -55,7 +55,7 @@ async function deleteUser(req, res) {
   if (req.user.username !== req.params.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();
   }
-  await User.deleteOne({ username: req.params.username });
+  await User.deleteOne({ username: req.params.username }).exec();
   return res.status(200).json({ message: 'User deleted successfully' });
 }
 

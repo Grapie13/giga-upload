@@ -5,7 +5,7 @@ const { CustomError } = require('./CustomError');
 class ValidationError extends CustomError {
   constructor(errors) {
     super('');
-    this._errorCode = 401;
+    this._statusCode = 401;
     this.errors = errors.map(error => ({
       message: error.message,
       field: error.context.key

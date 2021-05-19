@@ -16,6 +16,7 @@ const {
 } = require('../../src/controllers/userControllers');
 const { mockRequest } = require('../utils/mockRequest');
 const { mockResponse } = require('../utils/mockResponse');
+const { ROLES } = require('../../src/utils/constants/roles');
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -23,43 +24,52 @@ const { expect } = chai;
 describe('User Controllers', () => {
   const user = {
     username: 'Tester',
-    role: 'user',
     password: 'password'
   };
   let users = [];
   const token = 'signedjwt';
 
   before(() => {
-    stub(User, 'create').callsFake(userData => new Promise((resolve, reject) => {
+    stub(User, 'create').callsFake(userData => {
       const { username, password } = userData;
       if (!username || !password) {
-        return reject(new Error('Username or password missing'));
+        throw new Error('Username or password missing');
       }
       const savedUser = {
         username,
         password,
-        role: 'user',
+        role: ROLES.User,
         id: new mongoose.Types.ObjectId(),
-        save: stub().resolves(true)
+        save: stub().resolves(true),
       };
       users.push(savedUser);
-      return resolve(savedUser);
-    }));
-    stub(User, 'deleteOne').callsFake(userData => {
+      return {
+        exec: stub().resolves(savedUser)
+      };
+    });
+    stub(User, 'deleteOne').callsFake(function (userData) {
       const { username } = userData;
       if (!username) {
         throw new Error('Username missing');
       }
       users = users.filter(dbEntry => dbEntry.username !== username);
-      return true;
+      return {
+        exec: stub().resolves(this)
+      };
     });
-    stub(User, 'find').resolves(users);
+    stub(User, 'find').returns({
+      select: stub().returns({
+        exec: stub().resolves(users)
+      })
+    });
     stub(User, 'findOne').callsFake(userData => {
       const { username } = userData;
       if (!username) {
         throw new Error('Username missing');
       }
-      return users.find(dbEntry => dbEntry.username === username);
+      return {
+        exec: stub().resolves(users.find(dbEntry => dbEntry.username === username))
+      };
     });
     stub(jwt, 'sign').returns(token);
   });
@@ -107,7 +117,9 @@ describe('User Controllers', () => {
       await createUser(req, res);
       expect(User.create).to.have.been.called;
       expect(res.status).to.have.been.calledWith(201);
-      expect(res.json).to.have.been.calledWith(match({ token }));
+      const returnedUser = res.json.args[0][0].user;
+      expect(returnedUser.username).to.eq(user.username);
+      expect(users.length).to.eq(1);
     });
   });
 
@@ -119,18 +131,27 @@ describe('User Controllers', () => {
       expect(res.status).to.have.been.calledWith(201);
 
       const newPassword = 'newPassword';
-      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { username: 'MaliciousUser', role: 'user' } });
+      req = mockRequest({
+        params: { username: user.username },
+        body: { password: newPassword },
+        user: { username: 'MaliciousUser', role: ROLES.User }
+      });
       res = mockResponse();
-      await updateUser(req, res);
-      expect(res.status).to.have.been.calledWith(403);
-      expect(res.json).to.have.been.calledWith(match({ message: 'You are not authorized to access this route' }));
+      await updateUser(req, res).catch(err => {
+        expect(err.statusCode).to.eq(403);
+        expect(err.message).to.eq('You are not authorized to access this route');
+      });
 
-      const adminRole = 'administrator';
-      req = mockRequest({ params: { username: user.username }, body: { role: adminRole }, user: { username: 'MaliciousUser', role: 'user' } });
+      req = mockRequest({
+        params: { username: user.username },
+        body: { role: ROLES.Administrator },
+        user: { username: 'MaliciousUser', role: ROLES.User }
+      });
       res = mockResponse();
-      await updateUser(req, res);
-      expect(res.status).to.have.been.calledWith(403);
-      expect(res.json).to.have.been.calledWith(match({ message: 'You are not authorized to access this route' }));
+      await updateUser(req, res).catch(err => {
+        expect(err.statusCode).to.eq(403);
+        expect(err.message).to.eq('You are not authorized to access this route');
+      });
     });
 
     it("should update a user's password", async () => {
@@ -140,7 +161,11 @@ describe('User Controllers', () => {
       expect(res.status).to.have.been.calledWith(201);
 
       const newPassword = 'newPassword';
-      req = mockRequest({ params: { username: user.username }, body: { password: newPassword }, user: { username: user.username, role: 'user' } });
+      req = mockRequest({
+        params: { username: user.username },
+        body: { password: newPassword },
+        user: { username: user.username, role: ROLES.User }
+      });
       res = mockResponse();
       await updateUser(req, res);
       const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
@@ -154,13 +179,16 @@ describe('User Controllers', () => {
       await createUser(req, res);
       expect(res.status).to.have.been.calledWith(201);
 
-      const adminRole = 'administrator';
-      req = mockRequest({ params: { username: user.username }, body: { role: adminRole }, user: { role: adminRole } });
+      req = mockRequest({
+        params: { username: user.username },
+        body: { role: ROLES.Administrator },
+        user: { role: ROLES.Administrator }
+      });
       res = mockResponse();
       await updateUser(req, res);
       const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
       expect(res.status).to.have.been.calledWith(200);
-      expect(res.json).to.have.been.calledWith(match({ user: { ...updatedUser, role: adminRole } }));
+      expect(res.json).to.have.been.calledWith(match({ user: { ...updatedUser, role: ROLES.Administrator } }));
     });
   });
 
@@ -172,12 +200,15 @@ describe('User Controllers', () => {
       expect(res.status).to.have.been.calledWith(201);
 
       const deletedUser = users[0];
-      req = mockRequest({ params: { username: user.username } });
+      req = mockRequest({
+        params: { username: user.username },
+        user: { username: user.username }
+      });
       res = mockResponse();
       await deleteUser(req, res);
       expect(User.deleteOne).to.have.been.called;
       expect(res.status).to.have.been.calledWith(200);
-      expect(res.end).to.have.been.called;
+      expect(res.json).to.have.been.calledWith(match({ message: 'User deleted successfully' }));
       expect(users).to.not.include(deletedUser);
     });
   });
