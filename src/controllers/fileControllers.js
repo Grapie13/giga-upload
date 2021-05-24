@@ -1,6 +1,7 @@
 'use strict';
 
-const { promises: fs } = require('fs');
+const { stat, createReadStream, promises: { rm } } = require('fs');
+const { pipeline } = require('stream');
 const { File } = require('../models/File');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { ForbiddenError } = require('../errors/ForbiddenError');
@@ -39,12 +40,33 @@ async function createFile(req, res) {
   return res.status(201).json({ file });
 }
 
+async function downloadFile(req, res) {
+  const file = await File.findOne({ _id: req.params.fileId });
+  if (!file) {
+    throw new NotFoundError('File not found');
+  }
+  stat(file.path, statErr => {
+    if (statErr) {
+      throw statErr;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename=${file.filename}`
+    });
+    pipeline(createReadStream(file.path), res, pipelineErr => {
+      if (pipelineErr) {
+        throw pipelineErr;
+      }
+    });
+  });
+}
+
 async function deleteFile(req, res) {
   const file = await File.findOne({ _id: req.params.fileId }).exec();
   if (!file) {
     throw new NotFoundError('File not found');
   }
-  await fs.rm(file.path);
+  await rm(file.path);
   await File.deleteOne({ _id: req.params.fileId }).exec();
   return res.status(200).json({ message: 'File deleted successfully' });
 }
@@ -54,5 +76,6 @@ module.exports = {
   getFiles,
   getUserFiles,
   createFile,
+  downloadFile,
   deleteFile
 };

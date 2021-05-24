@@ -25,7 +25,7 @@ async function getUser(req, res) {
 async function createUser(req, res) {
   let user = await User.findOne({ username: req.body.username }).exec();
   if (user) {
-    throw new BadRequestError('User already exists');
+    throw new BadRequestError('A user with that username already exists');
   }
   user = await User.create(req.body).exec();
   return res.status(201).json({ user });

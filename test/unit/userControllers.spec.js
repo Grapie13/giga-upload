@@ -12,11 +12,12 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { User } = require('../../src/models/User');
 const {
-  getAllUsers, createUser, updateUser, deleteUser
+  getAllUsers, createUser, updateUser, deleteUser, getUser
 } = require('../../src/controllers/userControllers');
 const { mockRequest } = require('../utils/mockRequest');
 const { mockResponse } = require('../utils/mockResponse');
 const { ROLES } = require('../../src/utils/constants/roles');
+const { CustomError } = require('../../src/errors/CustomError');
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -68,6 +69,9 @@ describe('User Controllers', () => {
         throw new Error('Username missing');
       }
       return {
+        select: stub().returns({
+          exec: stub().resolves(users.find(dbEntry => dbEntry.username === username))
+        }),
         exec: stub().resolves(users.find(dbEntry => dbEntry.username === username))
       };
     });
@@ -110,8 +114,72 @@ describe('User Controllers', () => {
     });
   });
 
+  describe('Get user', () => {
+    it('should throw a not found error if the user does not exist', async () => {
+      const req = mockRequest({ params: { username: user.username } });
+      const res = mockResponse();
+      try {
+        await getUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(404);
+        expect(err.message).to.eq('User not found');
+      }
+    });
+
+    it('should throw a forbidden error if the accessing user is not the account owner or an administrator', async () => {
+      let req = mockRequest({ body: { username: user.username, password: user.password } });
+      let res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      req = mockRequest({ params: { username: user.username }, user: { username: 'AnotherUser' } });
+      res = mockResponse();
+      try {
+        await getUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(403);
+        expect(err.message).to.eq('You are not authorized to access this route');
+      }
+    });
+
+    it("should return a user's details", async () => {
+      let req = mockRequest({ body: { username: user.username, password: user.password } });
+      let res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      req = mockRequest({ params: { username: user.username }, user: { username: user.username } });
+      res = mockResponse();
+      await getUser(req, res);
+      expect(res.status).to.have.been.calledWith(200);
+      const returnedUser = res.json.args[0][0].user;
+      expect(returnedUser.username).to.eq(user.username);
+    });
+  });
+
   describe('Create user', () => {
-    it('should create a user and return a JSON web token', async () => {
+    it('should throw a bad request error if a user with that username already exists', async () => {
+      const req = mockRequest({ body: { username: user.username, password: user.password } });
+      const res = mockResponse();
+      await createUser(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+
+      resetHistory();
+      try {
+        await createUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(400);
+        expect(err.message).to.eq('A user with that username already exists');
+      }
+    });
+
+    it('should create a user and return it', async () => {
       const req = mockRequest({ body: { username: user.username, password: user.password } });
       const res = mockResponse();
       await createUser(req, res);
@@ -124,7 +192,7 @@ describe('User Controllers', () => {
   });
 
   describe('Update user', () => {
-    it('should return a 403 status if the updating user is not an administrator nor the owner of the account', async () => {
+    it('should throw a forbidden error if the updating user is not an administrator nor the owner of the account', async () => {
       let req = mockRequest({ body: { username: user.username, password: user.password } });
       let res = mockResponse();
       await createUser(req, res);

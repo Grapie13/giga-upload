@@ -2,7 +2,7 @@
 
 const express = require('express');
 const {
-  getFiles, getFile, getUserFiles, createFile, deleteFile
+  getFiles, getFile, getUserFiles, createFile, downloadFile, deleteFile
 } = require('../controllers/fileControllers');
 const { handleUpload } = require('../middleware/handleUpload');
 const { authorizationCheck } = require('../middleware/authorizationCheck');
@@ -17,6 +17,7 @@ fileRouter.route('/v1/files')
 fileRouter.route('/v1/files/:fileId')
   .get([authorizationCheck, adminRoleCheck], asyncHandler(getFile))
   .delete(authorizationCheck, asyncHandler(deleteFile));
+fileRouter.route('/v1/files/:fileId/download').get(authorizationCheck, downloadFile);
 fileRouter.route('/v1/users/:username/files')
   .get(authorizationCheck, getUserFiles);
 
