@@ -6,6 +6,7 @@ const { File } = require('../models/File');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { ForbiddenError } = require('../errors/ForbiddenError');
 const { ROLES } = require('../utils/constants/roles');
+const { logger } = require('../logger');
 
 async function getFiles(req, res) {
   const files = await File.find().populate('owner', '-password').exec();
@@ -66,7 +67,12 @@ async function deleteFile(req, res) {
   if (!file) {
     throw new NotFoundError('File not found');
   }
-  await rm(file.path);
+  await rm(file.path).catch(err => {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
+    logger.log('warn', `A database entry existed for ${file.path} while the file did not. Deleting entry.`);
+  });
   await File.deleteOne({ _id: req.params.fileId }).exec();
   return res.status(200).json({ message: 'File deleted successfully' });
 }

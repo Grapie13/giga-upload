@@ -89,6 +89,15 @@ describe('User Controllers', () => {
     restore();
   });
 
+  async function createTestUser(username, password) {
+    const req = mockRequest({
+      body: { username, password }
+    });
+    const res = mockResponse();
+    await createUser(req, res);
+    expect(res.status).to.have.been.calledWith(201);
+  }
+
   describe('Get all users', () => {
     it('should return an empty array if no users are in the database', async () => {
       const req = mockRequest();
@@ -100,13 +109,10 @@ describe('User Controllers', () => {
     });
 
     it('should return an array of existing users', async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+      await createTestUser(user.username, user.password);
 
-      req = mockRequest();
-      res = mockResponse();
+      const req = mockRequest();
+      const res = mockResponse();
       await getAllUsers(req, res);
       expect(User.find).to.have.been.called;
       expect(res.status).to.have.been.calledWith(200);
@@ -129,13 +135,10 @@ describe('User Controllers', () => {
     });
 
     it('should throw a forbidden error if the accessing user is not the account owner or an administrator', async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+      await createTestUser(user.username, user.password);
 
-      req = mockRequest({ params: { username: user.username }, user: { username: 'AnotherUser' } });
-      res = mockResponse();
+      const req = mockRequest({ params: { username: user.username }, user: { username: 'AnotherUser' } });
+      const res = mockResponse();
       try {
         await getUser(req, res);
         throw new Error('Function did not throw');
@@ -147,13 +150,10 @@ describe('User Controllers', () => {
     });
 
     it("should return a user's details", async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+      await createTestUser(user.username, user.password);
 
-      req = mockRequest({ params: { username: user.username }, user: { username: user.username } });
-      res = mockResponse();
+      const req = mockRequest({ params: { username: user.username }, user: { username: user.username } });
+      const res = mockResponse();
       await getUser(req, res);
       expect(res.status).to.have.been.calledWith(200);
       const returnedUser = res.json.args[0][0].user;
@@ -168,7 +168,6 @@ describe('User Controllers', () => {
       await createUser(req, res);
       expect(res.status).to.have.been.calledWith(201);
 
-      resetHistory();
       try {
         await createUser(req, res);
         throw new Error('Function did not throw');
@@ -192,49 +191,72 @@ describe('User Controllers', () => {
   });
 
   describe('Update user', () => {
-    it('should throw a forbidden error if the updating user is not an administrator nor the owner of the account', async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+    it('should throw a not found error if the updated user does not exist', async () => {
+      const req = mockRequest({
+        params: { username: user.username },
+        body: { role: ROLES.Administrator },
+        user: { username: 'Admin', role: ROLES.Administrator }
+      });
+      const res = mockResponse();
+      try {
+        await updateUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(404);
+        expect(err.message).to.eq('User not found');
+      }
+    });
+
+    it('should throw a forbidden error if the updating user is not the owner of the account nor an administrator', async () => {
+      await createTestUser(user.username, user.password);
 
       const newPassword = 'newPassword';
-      req = mockRequest({
+      const req = mockRequest({
         params: { username: user.username },
         body: { password: newPassword },
         user: { username: 'MaliciousUser', role: ROLES.User }
       });
-      res = mockResponse();
-      await updateUser(req, res).catch(err => {
+      const res = mockResponse();
+      try {
+        await updateUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
         expect(err.message).to.eq('You are not authorized to access this route');
-      });
+      }
+    });
 
-      req = mockRequest({
+    it('should throw a forbidden error if a role is updated by someone who is not an administrator', async () => {
+      await createTestUser(user.username, user.password);
+
+      const req = mockRequest({
         params: { username: user.username },
         body: { role: ROLES.Administrator },
         user: { username: 'MaliciousUser', role: ROLES.User }
       });
-      res = mockResponse();
-      await updateUser(req, res).catch(err => {
+      const res = mockResponse();
+      try {
+        await updateUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
         expect(err.message).to.eq('You are not authorized to access this route');
-      });
+      }
     });
 
     it("should update a user's password", async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+      await createTestUser(user.username, user.password);
 
       const newPassword = 'newPassword';
-      req = mockRequest({
+      const req = mockRequest({
         params: { username: user.username },
         body: { password: newPassword },
         user: { username: user.username, role: ROLES.User }
       });
-      res = mockResponse();
+      const res = mockResponse();
       await updateUser(req, res);
       const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
       expect(res.status).to.have.been.calledWith(200);
@@ -242,17 +264,14 @@ describe('User Controllers', () => {
     });
 
     it("should update a user's role if the updating user is an administrator", async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
+      await createTestUser(user.username, user.password);
 
-      req = mockRequest({
+      const req = mockRequest({
         params: { username: user.username },
         body: { role: ROLES.Administrator },
         user: { role: ROLES.Administrator }
       });
-      res = mockResponse();
+      const res = mockResponse();
       await updateUser(req, res);
       const updatedUser = users.find(dbEntry => dbEntry.username === user.username);
       expect(res.status).to.have.been.calledWith(200);
@@ -261,18 +280,65 @@ describe('User Controllers', () => {
   });
 
   describe('Delete user', () => {
-    it('should remove a user from the database', async () => {
-      let req = mockRequest({ body: { username: user.username, password: user.password } });
-      let res = mockResponse();
-      await createUser(req, res);
-      expect(res.status).to.have.been.calledWith(201);
-
-      const deletedUser = users[0];
-      req = mockRequest({
+    it('should throw a not found error if the deleted user does not exist', async () => {
+      const req = mockRequest({
         params: { username: user.username },
         user: { username: user.username }
       });
-      res = mockResponse();
+      const res = mockResponse();
+      try {
+        await deleteUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(404);
+        expect(err.message).to.eq('User not found');
+      }
+    });
+
+    it('should throw a forbidden error if the deleting user is not the owner of the account nor an administrator', async () => {
+      await createTestUser(user.username, user.password);
+
+      const req = mockRequest({
+        params: { username: user.username },
+        user: { username: 'MaliciousUser', role: ROLES.User }
+      });
+      const res = mockResponse();
+      try {
+        await deleteUser(req, res);
+        throw new Error('Function did not throw');
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(403);
+        expect(err.message).to.eq('You are not authorized to access this route');
+      }
+    });
+
+    it('should remove a user from the database if deleting user is the owner of the account', async () => {
+      await createTestUser(user.username, user.password);
+
+      const deletedUser = users[0];
+      const req = mockRequest({
+        params: { username: user.username },
+        user: { username: user.username }
+      });
+      const res = mockResponse();
+      await deleteUser(req, res);
+      expect(User.deleteOne).to.have.been.called;
+      expect(res.status).to.have.been.calledWith(200);
+      expect(res.json).to.have.been.calledWith(match({ message: 'User deleted successfully' }));
+      expect(users).to.not.include(deletedUser);
+    });
+
+    it('should remove a user from the database if deleting user is an administrator', async () => {
+      await createTestUser(user.username, user.password);
+
+      const deletedUser = users[0];
+      const req = mockRequest({
+        params: { username: user.username },
+        user: { username: 'Admin', role: ROLES.Administrator }
+      });
+      const res = mockResponse();
       await deleteUser(req, res);
       expect(User.deleteOne).to.have.been.called;
       expect(res.status).to.have.been.calledWith(200);
