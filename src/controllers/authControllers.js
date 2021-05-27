@@ -6,11 +6,11 @@ const { BadRequestError } = require('../errors/BadRequestError');
 const { AuthorizationError } = require('../errors/AuthorizationError');
 
 async function register(req, res) {
-  let user = await User.findOne({ username: req.body.username });
+  let user = await User.findOne({ username: req.body.username }).exec();
   if (user) {
     throw new BadRequestError('A user with that username already exists');
   }
-  user = await User.create(req.body);
+  user = await User.create(req.body).exec();
   const tokenPayload = {
     id: user.id,
     username: user.username
@@ -22,7 +22,7 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const user = await User.findOne({ username: req.body.username });
+  const user = await User.findOne({ username: req.body.username }).exec();
   if (!user) {
     throw new AuthorizationError();
   }

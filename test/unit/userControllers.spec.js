@@ -8,7 +8,6 @@ const {
   resetHistory,
 } = require('sinon');
 const sinonChai = require('sinon-chai');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { User } = require('../../src/models/User');
 const {
@@ -18,6 +17,7 @@ const { mockRequest } = require('../utils/mockRequest');
 const { mockResponse } = require('../utils/mockResponse');
 const { ROLES } = require('../../src/utils/constants/roles');
 const { CustomError } = require('../../src/errors/CustomError');
+const { FailedTest } = require('../utils/FailedTest');
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -28,7 +28,6 @@ describe('User Controllers', () => {
     password: 'password'
   };
   let users = [];
-  const token = 'signedjwt';
 
   before(() => {
     stub(User, 'create').callsFake(userData => {
@@ -75,7 +74,6 @@ describe('User Controllers', () => {
         exec: stub().resolves(users.find(dbEntry => dbEntry.username === username))
       };
     });
-    stub(jwt, 'sign').returns(token);
   });
 
   beforeEach(() => {
@@ -126,7 +124,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await getUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
@@ -141,7 +139,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await getUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
@@ -170,7 +168,7 @@ describe('User Controllers', () => {
 
       try {
         await createUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(400);
@@ -200,7 +198,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await updateUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
@@ -220,7 +218,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await updateUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
@@ -239,7 +237,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await updateUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
@@ -288,7 +286,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await deleteUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
@@ -306,7 +304,7 @@ describe('User Controllers', () => {
       const res = mockResponse();
       try {
         await deleteUser(req, res);
-        throw new Error('Function did not throw');
+        throw new FailedTest();
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(403);
