@@ -3,6 +3,7 @@
 const { stat, createReadStream, promises: { rm } } = require('fs');
 const { pipeline } = require('stream');
 const { File } = require('../models/File');
+const { User } = require('../models/User');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { ForbiddenError } = require('../errors/ForbiddenError');
 const { ROLES } = require('../utils/constants/roles');
@@ -25,7 +26,8 @@ async function getUserFiles(req, res) {
   if (req.user.username !== req.params.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();
   }
-  const files = await File.find({ owner: req.user.id }).exec();
+  const searchedUser = await User.findOne({ username: req.params.username }).exec();
+  const files = await File.find({ owner: searchedUser.id }).exec();
   return res.status(200).json({ files });
 }
 

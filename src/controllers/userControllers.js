@@ -27,7 +27,7 @@ async function createUser(req, res) {
   if (user) {
     throw new BadRequestError('A user with that username already exists');
   }
-  user = await User.create(req.body).exec();
+  user = await User.create(req.body);
   return res.status(201).json({ user });
 }
 

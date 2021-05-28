@@ -15,7 +15,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line
   if (err instanceof CustomError) {
     return res.status(err.statusCode).json(err.formatErrors());
   }
-  logger.log('error', JSON.stringify(err));
+  logger.log('error', err.toString());
   return res.status(500).json({
     errors: [
       { message: 'Internal server error' }

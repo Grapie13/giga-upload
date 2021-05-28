@@ -43,18 +43,16 @@ describe('User Controllers', () => {
         save: stub().resolves(true),
       };
       users.push(savedUser);
-      return {
-        exec: stub().resolves(savedUser)
-      };
+      return savedUser;
     });
-    stub(User, 'deleteOne').callsFake(function (userData) {
+    stub(User, 'deleteOne').callsFake(userData => {
       const { username } = userData;
       if (!username) {
         throw new Error('Username missing');
       }
       users = users.filter(dbEntry => dbEntry.username !== username);
       return {
-        exec: stub().resolves(this)
+        exec: stub().resolves(true)
       };
     });
     stub(User, 'find').returns({

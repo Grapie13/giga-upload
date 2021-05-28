@@ -21,7 +21,7 @@ const { FailedTest } = require('../utils/FailedTest');
 chai.use(sinonChai);
 const { expect } = chai;
 
-describe('User Controllers', () => {
+describe('Auth Controllers', () => {
   const user = {
     username: 'Tester',
     password: 'password'
@@ -49,9 +49,7 @@ describe('User Controllers', () => {
         }))
       };
       users.push(savedUser);
-      return {
-        exec: stub().resolves(savedUser)
-      };
+      return savedUser;
     });
     stub(User, 'findOne').callsFake(userData => {
       const { username } = userData;
@@ -86,72 +84,70 @@ describe('User Controllers', () => {
     expect(res.status).to.have.been.calledWith(201);
   }
 
-  describe('Auth Controllers', () => {
-    describe('Register', () => {
-      it('should throw a bad request error if a user with that username already exists', async () => {
-        await createTestUser(user.username, user.password);
+  describe('Register', () => {
+    it('should throw a bad request error if a user with that username already exists', async () => {
+      await createTestUser(user.username, user.password);
 
-        const req = mockRequest({ body: { username: user.username, password: user.password } });
-        const res = mockResponse();
-        try {
-          await register(req, res);
-          throw new FailedTest();
-        } catch (err) {
-          expect(err).to.be.an.instanceof(CustomError);
-          expect(err.statusCode).to.eq(400);
-          expect(err.message).to.eq('A user with that username already exists');
-        }
-      });
-
-      it('should create a new user and return a JWT', async () => {
-        const req = mockRequest({ body: { username: user.username, password: user.password } });
-        const res = mockResponse();
+      const req = mockRequest({ body: { username: user.username, password: user.password } });
+      const res = mockResponse();
+      try {
         await register(req, res);
-        expect(jwt.sign).to.have.been.called;
-        expect(res.status).to.have.been.calledWith(201);
-        expect(res.json).to.have.been.calledWith(match({ token }));
-      });
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(400);
+        expect(err.message).to.eq('A user with that username already exists');
+      }
     });
 
-    describe('Login', () => {
-      it('should throw an authorization error if a user with that username does not exist', async () => {
-        const req = mockRequest({ body: { username: user.username, password: user.password } });
-        const res = mockResponse();
-        try {
-          await login(req, res);
-          throw new FailedTest();
-        } catch (err) {
-          expect(err).to.be.an.instanceof(CustomError);
-          expect(err.statusCode).to.eq(401);
-          expect(err.message).to.eq('Invalid username or password');
-        }
-      });
+    it('should create a new user and return a JWT', async () => {
+      const req = mockRequest({ body: { username: user.username, password: user.password } });
+      const res = mockResponse();
+      await register(req, res);
+      expect(jwt.sign).to.have.been.called;
+      expect(res.status).to.have.been.calledWith(201);
+      expect(res.json).to.have.been.calledWith(match({ token }));
+    });
+  });
 
-      it('should throw an authorization error if user inputted password does not match the database password', async () => {
-        await createTestUser(user.username, user.password);
-
-        const req = mockRequest({ body: { username: user.username, password: 'WrongPassword' } });
-        const res = mockResponse();
-        try {
-          await login(req, res);
-          throw new FailedTest();
-        } catch (err) {
-          expect(err).to.be.an.instanceof(CustomError);
-          expect(err.statusCode).to.eq(401);
-          expect(err.message).to.eq('Invalid username or password');
-        }
-      });
-
-      it('should create and return a JWT', async () => {
-        await createTestUser(user.username, user.password);
-
-        const req = mockRequest({ body: { username: user.username, password: user.password } });
-        const res = mockResponse();
+  describe('Login', () => {
+    it('should throw an authorization error if a user with that username does not exist', async () => {
+      const req = mockRequest({ body: { username: user.username, password: user.password } });
+      const res = mockResponse();
+      try {
         await login(req, res);
-        expect(jwt.sign).to.have.been.called;
-        expect(res.status).to.have.been.calledWith(200);
-        expect(res.json).to.have.been.calledWith(match({ token }));
-      });
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(401);
+        expect(err.message).to.eq('Invalid username or password');
+      }
+    });
+
+    it('should throw an authorization error if user inputted password does not match the database password', async () => {
+      await createTestUser(user.username, user.password);
+
+      const req = mockRequest({ body: { username: user.username, password: 'WrongPassword' } });
+      const res = mockResponse();
+      try {
+        await login(req, res);
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(401);
+        expect(err.message).to.eq('Invalid username or password');
+      }
+    });
+
+    it('should create and return a JWT', async () => {
+      await createTestUser(user.username, user.password);
+
+      const req = mockRequest({ body: { username: user.username, password: user.password } });
+      const res = mockResponse();
+      await login(req, res);
+      expect(jwt.sign).to.have.been.called;
+      expect(res.status).to.have.been.calledWith(200);
+      expect(res.json).to.have.been.calledWith(match({ token }));
     });
   });
 });
