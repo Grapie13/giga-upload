@@ -9,7 +9,7 @@ const {
 } = require('sinon');
 const sinonChai = require('sinon-chai');
 const mongoose = require('mongoose');
-const fs = require('fs');
+const { promises: fs } = require('fs');
 const { File } = require('../../src/models/File');
 const {
   getFile,

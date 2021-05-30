@@ -1,6 +1,6 @@
 'use strict';
 
-const { stat, createReadStream, promises: { rm } } = require('fs');
+const { stat, createReadStream, promises: fs } = require('fs');
 const { pipeline } = require('stream');
 const { File } = require('../models/File');
 const { NotFoundError } = require('../errors/NotFoundError');
@@ -67,7 +67,7 @@ async function deleteFile(req, res) {
   if (!file) {
     throw new NotFoundError('File not found');
   }
-  await rm(file.path).catch(err => {
+  await fs.rm(file.path).catch(err => {
     if (err.code !== 'ENOENT') {
       throw err;
     }
