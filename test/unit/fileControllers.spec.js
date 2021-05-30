@@ -9,6 +9,7 @@ const {
 } = require('sinon');
 const sinonChai = require('sinon-chai');
 const mongoose = require('mongoose');
+const fs = require('fs');
 const { File } = require('../../src/models/File');
 const {
   getFile,
@@ -27,14 +28,16 @@ chai.use(sinonChai);
 const { expect } = chai;
 
 describe('File Controllers', () => {
+  const id = new mongoose.Types.ObjectId();
   const file = {
     filename: 'TestFile.jpg',
     path: 'E:\\Test\\TestFile.jpg',
-    owner: new mongoose.Types.ObjectId(),
+    owner: id,
     encoding: '7bit',
     mimetype: 'image/jpeg'
   };
   const user = {
+    id,
     username: 'Tester',
     role: ROLES.User
   };
@@ -48,18 +51,22 @@ describe('File Controllers', () => {
           exec: stub().resolves(
             owner ? files.filter(dbEntry => dbEntry.owner === owner) : files
           )
-        })
+        }),
+        exec: stub().resolves(
+          owner ? files.filter(dbEntry => dbEntry.owner === owner) : files
+        )
       };
     });
     stub(File, 'findOne').callsFake(fileData => {
-      const id = fileData._id;
-      if (!id) {
+      const fileId = fileData._id;
+      if (!fileId) {
         throw new Error('ID is missing');
       }
       return {
         populate: stub().returns({
-          exec: stub().resolves(files.find(dbEntry => dbEntry.id === id))
-        })
+          exec: stub().resolves(files.find(dbEntry => dbEntry.id === fileId))
+        }),
+        exec: stub().resolves(files.find(dbEntry => dbEntry.id === fileId))
       };
     });
     stub(File, 'create').callsFake(fileData => {
@@ -74,15 +81,16 @@ describe('File Controllers', () => {
       return newFile;
     });
     stub(File, 'deleteOne').callsFake(fileData => {
-      const id = fileData._id;
-      if (!id) {
+      const fileId = fileData._id;
+      if (!fileId) {
         throw new Error('ID is missing');
       }
-      files = files.filter(dbEntry => dbEntry.id !== id);
+      files = files.filter(dbEntry => dbEntry.id !== fileId);
       return {
         exec: stub().resolves(true)
       };
     });
+    stub(fs, 'rm').resolves(true);
   });
 
   beforeEach(() => {
@@ -182,7 +190,65 @@ describe('File Controllers', () => {
     it("should return an array of user's files if the accessing user is an administrator", async () => {
       await createTestFile({ ...file });
 
-      const req = mockRequest({ params: { username: user.username } });
+      const req = mockRequest({ params: { username: user.username }, user: { username: user.username, id: user.id } });
+      const res = mockResponse();
+      await getUserFiles(req, res);
+      expect(res.status).to.have.been.calledWith(200);
+      const returnedFiles = res.json.args[0][0].files;
+      expect(returnedFiles.length).to.eq(1);
+      expect(returnedFiles[0].owner.toString()).to.eq(user.id.toString());
+      expect(returnedFiles[0].filename).to.eq(file.filename);
+    });
+  });
+
+  describe('Create file', () => {
+    it('should create and return a new file', async () => {
+      const req = mockRequest({
+        file: {
+          owner: user.id,
+          filename: file.filename,
+          mimetype: file.mimetype,
+          encoding: file.encoding,
+          filePath: file.path
+        },
+        user: {
+          id: user.id
+        }
+      });
+      const res = mockResponse();
+      await createFile(req, res);
+      expect(res.status).to.have.been.calledWith(201);
+      const returnedFile = res.json.args[0][0].file;
+      expect(returnedFile.owner).to.eq(user.id);
+      expect(returnedFile.filename).to.eq(file.filename);
+      expect(returnedFile.path).to.eq(file.path);
+      expect(returnedFile.encoding).to.eq(file.encoding);
+      expect(returnedFile.mimetype).to.eq(file.mimetype);
+    });
+  });
+
+  describe('Delete file', () => {
+    it('should throw a not found error if a file does not exist', async () => {
+      const req = mockRequest({ params: { fileId: 'BadID' } });
+      const res = mockResponse();
+      try {
+        await deleteFile(req, res);
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(404);
+        expect(err.message).to.eq('File not found');
+      }
+    });
+
+    it('should delete a file and return a message', async () => {
+      const testFile = await createTestFile({ ...file });
+
+      const req = mockRequest({ params: { fileId: testFile.id } });
+      const res = mockResponse();
+      await deleteFile(req, res);
+      expect(res.status).to.have.been.calledWith(200);
+      expect(res.json).to.have.been.calledWith(match({ message: 'File deleted successfully' }));
     });
   });
 });
