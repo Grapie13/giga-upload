@@ -12,7 +12,7 @@ async function connectDb() {
     });
     logger.log('info', 'Database connection established successfully');
   } catch (err) {
-    logger.log('error', JSON.stringify(err));
+    logger.log('error', err.toString());
     throw err;
   }
 }

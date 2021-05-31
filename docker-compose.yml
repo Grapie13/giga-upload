@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  file-server:
+    build: .
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      - "NODE_ENV=${NODE_ENV}"
+    links:
+      - "file-server-database:database"
+  file-server-database:
+    image: mongo
+    ports:
+      - "27017:27017"

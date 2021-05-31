@@ -12,11 +12,11 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { User } = require('../../src/models/User');
 const { register, login } = require('../../src/controllers/authControllers');
-const { mockRequest } = require('../utils/mockRequest');
-const { mockResponse } = require('../utils/mockResponse');
+const { mockRequest } = require('./utils/mockRequest');
+const { mockResponse } = require('./utils/mockResponse');
 const { ROLES } = require('../../src/utils/constants/roles');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('../utils/FailedTest');
+const { FailedTest } = require('./utils/FailedTest');
 
 chai.use(sinonChai);
 const { expect } = chai;

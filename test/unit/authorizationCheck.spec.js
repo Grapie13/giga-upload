@@ -7,8 +7,8 @@ const jwt = require('jsonwebtoken');
 const { authorizationCheck } = require('../../src/middleware/authorizationCheck');
 const { User } = require('../../src/models/User');
 const { CustomError } = require('../../src/errors/CustomError');
-const { mockRequest } = require('../utils/mockRequest');
-const { mockResponse } = require('../utils/mockResponse');
+const { mockRequest } = require('./utils/mockRequest');
+const { mockResponse } = require('./utils/mockResponse');
 
 chai.use(sinonChai);
 const { expect } = chai;

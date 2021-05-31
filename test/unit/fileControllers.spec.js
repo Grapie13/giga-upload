@@ -18,10 +18,10 @@ const {
   createFile,
   deleteFile
 } = require('../../src/controllers/fileControllers');
-const { mockRequest } = require('../utils/mockRequest');
-const { mockResponse } = require('../utils/mockResponse');
+const { mockRequest } = require('./utils/mockRequest');
+const { mockResponse } = require('./utils/mockResponse');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('../utils/FailedTest');
+const { FailedTest } = require('./utils/FailedTest');
 const { ROLES } = require('../../src/utils/constants/roles');
 
 chai.use(sinonChai);

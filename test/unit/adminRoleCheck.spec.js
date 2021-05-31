@@ -5,8 +5,8 @@ const { spy } = require('sinon');
 const { adminRoleCheck } = require('../../src/middleware/adminRoleCheck');
 const { ROLES } = require('../../src/utils/constants/roles');
 const { CustomError } = require('../../src/errors/CustomError');
-const { mockRequest } = require('../utils/mockRequest');
-const { mockResponse } = require('../utils/mockResponse');
+const { mockRequest } = require('./utils/mockRequest');
+const { mockResponse } = require('./utils/mockResponse');
 
 describe('Admin Role Check', () => {
   it('should call next with a forbidden error if the user is not an administrator', async () => {
