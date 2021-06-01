@@ -1,6 +1,7 @@
 'use strict';
 
 const Joi = require('joi');
+const { ROLES } = require('../utils/constants/roles');
 
 const userSchema = Joi.object({
   username: Joi
@@ -8,7 +9,10 @@ const userSchema = Joi.object({
     .required()
     .min(3)
     .max(20),
-  role: Joi.string().forbidden(),
+  role: Joi
+    .string()
+    .optional()
+    .valid(...Object.values(ROLES)),
   password: Joi
     .string()
     .required()

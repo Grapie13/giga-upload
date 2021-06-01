@@ -10,7 +10,10 @@ async function register(req, res) {
   if (user) {
     throw new BadRequestError('A user with that username already exists');
   }
-  user = await User.create(req.body);
+  user = await User.create({
+    username: req.body.username,
+    password: req.body.password
+  });
   const tokenPayload = {
     id: user.id,
     username: user.username

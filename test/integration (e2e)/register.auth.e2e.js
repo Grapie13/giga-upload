@@ -10,6 +10,7 @@ const { connectDb } = require('./utils/connectDb');
 const { User } = require('../../src/models/User');
 const { File } = require('../../src/models/File');
 const { FailedTest } = require('../shared utils/FailedTest');
+const { ROLES } = require('../../src/utils/constants/roles');
 
 describe('POST /v1/auth/register', () => {
   const username = 'Tester';
@@ -107,6 +108,18 @@ describe('POST /v1/auth/register', () => {
       expect(err.statusCode).to.eq(401);
       expect(errors[0].field).to.eq('password');
     }
+  });
+
+  it('should ignore the role parameter', async () => {
+    const res = await got(url, {
+      method,
+      headers,
+      body: JSON.stringify({ username, password, role: ROLES.Administrator })
+    });
+    const user = await User.findOne({ username });
+    expect(res.statusCode).to.eq(201);
+    expect(user).not.to.be.null;
+    expect(user.role).to.eq(ROLES.User);
   });
 
   it('should create a user and return a token', async () => {
