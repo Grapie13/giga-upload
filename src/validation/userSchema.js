@@ -13,7 +13,7 @@ const userSchema = Joi.object({
     .string()
     .required()
     .min(6)
-    .max(30)
+    .max(255)
 });
 
 module.exports = {

@@ -15,8 +15,12 @@ describe('POST /v1/auth/register', () => {
   const username = 'Tester';
   const password = 'password';
 
-  let url;
   let uploadPath;
+  let url;
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  const method = 'POST';
 
   before(async () => {
     loadEnv();
@@ -41,10 +45,8 @@ describe('POST /v1/auth/register', () => {
   it('should return a 401 status if the username does not pass validation', async () => {
     try {
       await got(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        method,
+        headers,
         body: JSON.stringify({ password })
       });
       throw new FailedTest();
@@ -52,6 +54,58 @@ describe('POST /v1/auth/register', () => {
       expect(err.statusCode).to.eq(401);
       const { errors } = JSON.parse(err.body);
       expect(errors[0].field).to.eq('username');
+    }
+
+    try {
+      await got(url, {
+        method,
+        headers,
+        body: JSON.stringify({ username: 'a', password })
+      });
+      throw new FailedTest();
+    } catch (err) {
+      expect(err.statusCode).to.eq(401);
+      const { errors } = JSON.parse(err.body);
+      expect(errors[0].field).to.eq('username');
+    }
+
+    try {
+      await got(url, {
+        method,
+        headers,
+        body: JSON.stringify({ username: 'thisiswaytoolongtopassthevalidation', password })
+      });
+      throw new FailedTest();
+    } catch (err) {
+      expect(err.statusCode).to.eq(401);
+      const { errors } = JSON.parse(err.body);
+      expect(errors[0].field).to.eq('username');
+    }
+  });
+
+  it('should return a 401 status if the password does not pass validation', async () => {
+    try {
+      await got(url, {
+        method,
+        headers,
+        body: JSON.stringify({ username })
+      });
+    } catch (err) {
+      expect(err.statusCode).to.eq(401);
+      const { errors } = JSON.parse(err.body);
+      expect(errors[0].field).to.eq('password');
+    }
+
+    try {
+      await got(url, {
+        method,
+        headers,
+        body: JSON.stringify({ username, password: 'short' })
+      });
+    } catch (err) {
+      expect(err.statusCode).to.eq(401);
+      const { errors } = JSON.parse(err.body);
+      expect(errors[0].field).to.eq('password');
     }
   });
 });
