@@ -13,7 +13,7 @@ const userRouter = express.Router();
 
 userRouter.route('/v1/users')
   .get([authorizationCheck, adminRoleCheck], asyncHandler(getAllUsers))
-  .post([authorizationCheck, userValidation], asyncHandler(createUser));
+  .post([authorizationCheck, adminRoleCheck, userValidation], asyncHandler(createUser));
 userRouter.route('/v1/users/:username')
   .get(authorizationCheck, asyncHandler(getUser))
   .patch(authorizationCheck, asyncHandler(updateUser))

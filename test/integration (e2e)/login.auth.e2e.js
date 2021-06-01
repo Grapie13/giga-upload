@@ -10,8 +10,9 @@ const { connectDb } = require('./utils/connectDb');
 const { User } = require('../../src/models/User');
 const { File } = require('../../src/models/File');
 const { FailedTest } = require('../shared utils/FailedTest');
+const { createTestUser } = require('./utils/createTestUser');
 
-describe('POST /v1/auth/register', () => {
+describe('POST /v1/auth/login', () => {
   const username = 'Tester';
   const password = 'password';
   const headers = {
@@ -25,7 +26,7 @@ describe('POST /v1/auth/register', () => {
   before(async () => {
     loadEnv();
     await connectDb();
-    url = `http://${process.env.APP_HOSTNAME}:${process.env.APP_PORT}/v1/auth/register`;
+    url = `http://${process.env.APP_HOSTNAME}:${process.env.APP_PORT}/v1/auth/login`;
     uploadPath = join(__dirname, `../../${process.env.UPLOAD_DIR}`);
   });
 
@@ -42,83 +43,46 @@ describe('POST /v1/auth/register', () => {
     await mongoose.connection.close();
   });
 
-  it('should return a 401 status if the username does not pass validation', async () => {
+  it('should return a 401 status when a user with that username does not exist', async () => {
     try {
       await got(url, {
         method,
         headers,
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ username: 'InvalidUser', password })
       });
       throw new FailedTest();
     } catch (err) {
       const { errors } = JSON.parse(err.body);
       expect(err.statusCode).to.eq(401);
-      expect(errors[0].field).to.eq('username');
-    }
-
-    try {
-      await got(url, {
-        method,
-        headers,
-        body: JSON.stringify({ username: 'a', password })
-      });
-      throw new FailedTest();
-    } catch (err) {
-      const { errors } = JSON.parse(err.body);
-      expect(err.statusCode).to.eq(401);
-      expect(errors[0].field).to.eq('username');
-    }
-
-    try {
-      await got(url, {
-        method,
-        headers,
-        body: JSON.stringify({ username: 'thisiswaytoolongtopassthevalidation', password })
-      });
-      throw new FailedTest();
-    } catch (err) {
-      const { errors } = JSON.parse(err.body);
-      expect(err.statusCode).to.eq(401);
-      expect(errors[0].field).to.eq('username');
+      expect(errors[0].message).to.eq('Invalid username or password');
     }
   });
 
-  it('should return a 401 status if the password does not pass validation', async () => {
+  it('should return a 401 status when the password is invalid', async () => {
     try {
+      await createTestUser(username, password);
       await got(url, {
         method,
         headers,
-        body: JSON.stringify({ username })
+        body: JSON.stringify({ username, password: 'WrongPassword' })
       });
+      throw new FailedTest();
     } catch (err) {
       const { errors } = JSON.parse(err.body);
       expect(err.statusCode).to.eq(401);
-      expect(errors[0].field).to.eq('password');
-    }
-
-    try {
-      await got(url, {
-        method,
-        headers,
-        body: JSON.stringify({ username, password: 'short' })
-      });
-    } catch (err) {
-      const { errors } = JSON.parse(err.body);
-      expect(err.statusCode).to.eq(401);
-      expect(errors[0].field).to.eq('password');
+      expect(errors[0].message).to.eq('Invalid username or password');
     }
   });
 
-  it('should create a user and return a token', async () => {
+  it('should return a token', async () => {
+    await createTestUser(username, password);
     const res = await got(url, {
       method,
       headers,
       body: JSON.stringify({ username, password })
     });
     const body = JSON.parse(res.body);
-    const user = await User.findOne({ username });
-    expect(res.statusCode).to.eq(201);
+    expect(res.statusCode).to.eq(200);
     expect(body.token).not.to.be.undefined;
-    expect(user).not.to.be.null;
   });
 });
