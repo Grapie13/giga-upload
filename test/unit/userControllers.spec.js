@@ -17,7 +17,7 @@ const { mockRequest } = require('./utils/mockRequest');
 const { mockResponse } = require('./utils/mockResponse');
 const { ROLES } = require('../../src/utils/constants/roles');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('./utils/FailedTest');
+const { FailedTest } = require('../shared utils/FailedTest');
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -126,7 +126,7 @@ describe('User Controllers', () => {
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
-        expect(err.message).to.eq('User not found');
+        expect(err.message).to.eq('A user with that username does not exist');
       }
     });
 
@@ -200,7 +200,7 @@ describe('User Controllers', () => {
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
-        expect(err.message).to.eq('User not found');
+        expect(err.message).to.eq('A user with that username does not exist');
       }
     });
 
@@ -288,7 +288,7 @@ describe('User Controllers', () => {
       } catch (err) {
         expect(err).to.be.an.instanceof(CustomError);
         expect(err.statusCode).to.eq(404);
-        expect(err.message).to.eq('User not found');
+        expect(err.message).to.eq('A user with that username does not exist');
       }
     });
 

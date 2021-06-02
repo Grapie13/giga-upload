@@ -2,7 +2,7 @@
 
 const { expect } = require('chai');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('./utils/FailedTest');
+const { FailedTest } = require('../shared utils/FailedTest');
 
 describe('CustomError', () => {
   it('should throw an error when being instantiated', () => {

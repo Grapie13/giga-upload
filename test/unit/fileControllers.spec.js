@@ -21,7 +21,7 @@ const {
 const { mockRequest } = require('./utils/mockRequest');
 const { mockResponse } = require('./utils/mockResponse');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('./utils/FailedTest');
+const { FailedTest } = require('../shared utils/FailedTest');
 const { ROLES } = require('../../src/utils/constants/roles');
 
 chai.use(sinonChai);

@@ -16,7 +16,7 @@ const { mockRequest } = require('./utils/mockRequest');
 const { mockResponse } = require('./utils/mockResponse');
 const { ROLES } = require('../../src/utils/constants/roles');
 const { CustomError } = require('../../src/errors/CustomError');
-const { FailedTest } = require('./utils/FailedTest');
+const { FailedTest } = require('../shared utils/FailedTest');
 
 chai.use(sinonChai);
 const { expect } = chai;
