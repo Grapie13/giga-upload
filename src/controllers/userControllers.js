@@ -14,7 +14,7 @@ async function getAllUsers(req, res) {
 async function getUser(req, res) {
   const user = await User.findOne({ username: req.params.username }).select('-password').exec();
   if (!user) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError('A user with that username does not exist');
   }
   if (req.user.username !== user.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();
@@ -34,7 +34,7 @@ async function createUser(req, res) {
 async function updateUser(req, res) {
   const user = await User.findOne({ username: req.params.username }).exec();
   if (!user) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError('A user with that username does not exist');
   }
   if (req.user.username !== user.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();
@@ -50,7 +50,7 @@ async function updateUser(req, res) {
 async function deleteUser(req, res) {
   const user = await User.findOne({ username: req.params.username }).exec();
   if (!user) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError('A user with that username does not exist');
   }
   if (req.user.username !== req.params.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();

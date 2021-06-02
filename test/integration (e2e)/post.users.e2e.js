@@ -134,23 +134,23 @@ describe('POST /v1/users', () => {
       expect(err.statusCode).to.eq(400);
       expect(errors[0].message).to.eq('A user with that username already exists');
     }
+  });
 
-    it('should create a user and returns its details', async () => {
-      const token = await createTestUser('Admin', password, { admin: true });
-      const res = await got(url, {
-        method,
-        headers: {
-          ...headers,
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ username, password, role: ROLES.Administrator })
-      });
-      const { user } = JSON.parse(res.body);
-      expect(res.statusCode).to.eq(201);
-      expect(user).not.to.be.undefined;
-      expect(user.username).to.eq(username);
-      expect(user.password).not.to.eq(password);
-      expect(user.role).to.eq(ROLES.Administrator);
+  it('should create a user and returns its details', async () => {
+    const token = await createTestUser('Admin', password, { admin: true });
+    const res = await got(url, {
+      method,
+      headers: {
+        ...headers,
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ username, password, role: ROLES.Administrator })
     });
+    const { user } = JSON.parse(res.body);
+    expect(res.statusCode).to.eq(201);
+    expect(user).not.to.be.undefined;
+    expect(user.username).to.eq(username);
+    expect(user.password).not.to.eq(password);
+    expect(user.role).to.eq(ROLES.Administrator);
   });
 });

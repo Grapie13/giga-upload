@@ -3,12 +3,9 @@
 const { expect } = require('chai');
 const got = require('got');
 const mongoose = require('mongoose');
-const { join } = require('path');
-const { promises: { rmdir } } = require('fs');
 const { loadEnv } = require('./utils/loadEnv');
 const { connectDb } = require('./utils/connectDb');
 const { User } = require('../../src/models/User');
-const { File } = require('../../src/models/File');
 const { FailedTest } = require('../shared utils/FailedTest');
 const { createTestUser } = require('./utils/createTestUser');
 
@@ -20,26 +17,20 @@ describe('POST /v1/auth/login', () => {
   };
   const method = 'POST';
 
-  let uploadPath;
   let url;
 
   before(async () => {
     loadEnv();
     await connectDb();
     url = `http://${process.env.APP_HOSTNAME}:${process.env.APP_PORT}/v1/auth/login`;
-    uploadPath = join(__dirname, `../../${process.env.UPLOAD_DIR}`);
   });
 
   beforeEach(async () => {
-    await rmdir(uploadPath, { recursive: true, force: true });
     await User.deleteMany({});
-    await File.deleteMany({});
   });
 
   after(async () => {
-    await rmdir(uploadPath, { recursive: true, force: true });
     await User.deleteMany({});
-    await File.deleteMany({});
     await mongoose.connection.close();
   });
 
