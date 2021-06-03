@@ -7,6 +7,7 @@ const { NotFoundError } = require('../errors/NotFoundError');
 const { ForbiddenError } = require('../errors/ForbiddenError');
 const { ROLES } = require('../utils/constants/roles');
 const { logger } = require('../logger');
+const { User } = require('../models/User');
 
 async function getFiles(req, res) {
   const files = await File.find().populate('owner', '-password').exec();
@@ -22,6 +23,10 @@ async function getFile(req, res) {
 }
 
 async function getUserFiles(req, res) {
+  const user = await User.findOne({ username: req.params.username });
+  if (!user) {
+    throw new NotFoundError('A user with that username does not exist');
+  }
   if (req.user.username !== req.params.username && req.user.role !== ROLES.Administrator) {
     throw new ForbiddenError();
   }

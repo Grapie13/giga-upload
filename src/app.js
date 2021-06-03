@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(helmet());
 app.use(rateLimit({
   windowMs: 60 * 1000,
-  max: 100
+  max: parseInt(process.env.MAX_REQUESTS, 10)
 }));
 
 app.use(routes);

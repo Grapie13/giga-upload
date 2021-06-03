@@ -9,7 +9,7 @@ function checkIfDirExists(path) {
         if (err.code !== 'ENOENT') {
           return reject(err);
         }
-        fs.mkdirSync(path);
+        fs.mkdirSync(path, { recursive: true });
       }
       return resolve();
     });

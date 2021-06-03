@@ -17,9 +17,9 @@ fileRouter.route('/v1/files')
 fileRouter.route('/v1/files/:fileId')
   .get([authorizationCheck, adminRoleCheck], asyncHandler(getFile))
   .delete(authorizationCheck, asyncHandler(deleteFile));
-fileRouter.route('/v1/files/:fileId/download').get(authorizationCheck, downloadFile);
+fileRouter.route('/v1/files/:fileId/download').get(authorizationCheck, asyncHandler(downloadFile));
 fileRouter.route('/v1/users/:username/files')
-  .get(authorizationCheck, getUserFiles);
+  .get(authorizationCheck, asyncHandler(getUserFiles));
 
 module.exports = {
   fileRouter

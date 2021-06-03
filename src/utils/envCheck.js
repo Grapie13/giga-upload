@@ -6,7 +6,8 @@ const ENVIRONMENTAL_VARIABLES = [
   'APP_PORT',
   'JWT_SECRET',
   'MONGO_URI',
-  'UPLOAD_DIR'
+  'UPLOAD_DIR',
+  'MAX_REQUESTS'
 ];
 
 async function envCheck() {
