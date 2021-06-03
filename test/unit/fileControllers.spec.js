@@ -23,6 +23,7 @@ const { mockResponse } = require('./utils/mockResponse');
 const { CustomError } = require('../../src/errors/CustomError');
 const { FailedTest } = require('../shared utils/FailedTest');
 const { ROLES } = require('../../src/utils/constants/roles');
+const { User } = require('../../src/models/User');
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -88,6 +89,15 @@ describe('File Controllers', () => {
       files = files.filter(dbEntry => dbEntry.id !== fileId);
       return {
         exec: stub().resolves(true)
+      };
+    });
+    stub(User, 'findOne').callsFake(userData => {
+      const { username } = userData;
+      if (!username) {
+        throw new Error('Username is missing');
+      }
+      return {
+        exec: stub().resolves(username === user.username ? user : null)
       };
     });
     stub(fs, 'rm').resolves(true);
@@ -174,6 +184,19 @@ describe('File Controllers', () => {
   });
 
   describe('Get user files', () => {
+    it('should throw a not found error if the user does not exist', async () => {
+      const req = mockRequest({ params: { username: 'NonExistant' }, user: { username: user.username, role: ROLES.User } });
+      const res = mockResponse();
+      try {
+        await getUserFiles(req, res);
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(404);
+        expect(err.message).to.eq('A user with that username does not exist');
+      }
+    });
+
     it('should throw a forbidden error if the accessing user is not the owner nor an administrator', async () => {
       const req = mockRequest({ params: { username: user.username }, user: { username: 'MaliciousUser', role: ROLES.User } });
       const res = mockResponse();

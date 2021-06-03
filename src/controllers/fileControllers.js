@@ -23,7 +23,7 @@ async function getFile(req, res) {
 }
 
 async function getUserFiles(req, res) {
-  const user = await User.findOne({ username: req.params.username });
+  const user = await User.findOne({ username: req.params.username }).exec();
   if (!user) {
     throw new NotFoundError('A user with that username does not exist');
   }
