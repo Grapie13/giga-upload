@@ -264,10 +264,25 @@ describe('File Controllers', () => {
       }
     });
 
+    it('should throw a forbidden error if the deleting user is not the owner of a file', async () => {
+      const testFile = await createTestFile({ ...file });
+
+      const req = mockRequest({ params: { fileId: testFile.id }, user: { id: new mongoose.Types.ObjectId() } });
+      const res = mockResponse();
+      try {
+        await deleteFile(req, res);
+        throw new FailedTest();
+      } catch (err) {
+        expect(err).to.be.an.instanceof(CustomError);
+        expect(err.statusCode).to.eq(403);
+        expect(err.message).to.eq('You are not authorized to access this route');
+      }
+    });
+
     it('should delete a file and return a message', async () => {
       const testFile = await createTestFile({ ...file });
 
-      const req = mockRequest({ params: { fileId: testFile.id } });
+      const req = mockRequest({ params: { fileId: testFile.id }, user: { id: user.id } });
       const res = mockResponse();
       await deleteFile(req, res);
       expect(res.status).to.have.been.calledWith(200);

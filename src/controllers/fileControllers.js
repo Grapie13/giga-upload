@@ -72,6 +72,9 @@ async function deleteFile(req, res) {
   if (!file) {
     throw new NotFoundError('File not found');
   }
+  if (req.user.id !== file.owner.toString() && req.user.role !== ROLES.Administrator) {
+    throw new ForbiddenError();
+  }
   await fs.rm(file.path).catch(err => {
     if (err.code !== 'ENOENT') {
       throw err;
